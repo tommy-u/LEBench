@@ -26,11 +26,14 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
+
 int counter=3;
 bool  isFirstIteration = false;
 const char *home;
 char *output_fn = NULL;
 char *new_output_fn = NULL;
+#define TEST_FILE "/dev/shm/test_file.txt"
+
 #define setup 		(struct timespec *fp) \
 			{struct timespec timeA ; \
 			struct timespec timeC; \
@@ -57,7 +60,7 @@ char *new_output_fn = NULL;
 #define OUTPUT_FN		OUTPUT_FILE_PATH "output_file.csv"
 #define NEW_OUTPUT_FN	OUTPUT_FILE_PATH "new_output_file.csv"
 #define DEBUG false
-#define BASE_ITER 10000
+int BASE_ITER;
 
 #define PAGE_SIZE 4096
 
@@ -512,7 +515,9 @@ void read_test(struct timespec *diffTime) {
 	struct timespec startTime, endTime;
 	char *buf_in = (char *) malloc (sizeof(char) * file_size);
 
-	int fd =open("test_file.txt", O_RDONLY);
+  // Move this to /dev/shm/test_file.txt
+
+	int fd =open(TEST_FILE, O_RDONLY);
 	if (fd < 0) printf("invalid fd in read: %d\n", fd);
 	clock_gettime(CLOCK_MONOTONIC, &startTime);
 	syscall(SYS_read, fd, buf_in, file_size);
@@ -532,7 +537,7 @@ void read_warmup() {
 		buf_out[i] = 'a';
 	}
 
-	int fd = open("test_file.txt", O_CREAT | O_WRONLY);
+	int fd = open(TEST_FILE, O_CREAT | O_WRONLY);
 	if (fd < 0) printf("invalid fd in write: %d\n", fd);
 
 	syscall(SYS_write, fd, buf_out, file_size);
@@ -540,7 +545,7 @@ void read_warmup() {
 
 	char *buf_in = (char *) malloc (sizeof(char) * file_size);
 
-	fd =open("test_file.txt", O_RDONLY);
+	fd =open(TEST_FILE, O_RDONLY);
 	if (fd < 0) printf("invalid fd in read: %d\n", fd);
 	
 	for (int i = 0; i < 1000; i ++) {
@@ -560,7 +565,7 @@ void write_test(struct timespec *diffTime) {
 	for (int i = 0; i < file_size; i++) {
 		buf[i] = 'a';
 	}
-	int fd = open("test_file.txt", O_CREAT | O_WRONLY);
+	int fd = open(TEST_FILE, O_CREAT | O_WRONLY);
 	if (fd < 0) printf("invalid fd in write: %d\n", fd);
 
 	clock_gettime(CLOCK_MONOTONIC, &startTime);
@@ -578,7 +583,7 @@ void write_test(struct timespec *diffTime) {
 void mmap_test(struct timespec *diffTime) {
 	struct timespec startTime, endTime;
 
-	int fd =open("test_file.txt", O_RDONLY);
+	int fd =open(TEST_FILE, O_RDONLY);
 	if (fd < 0) printf("invalid fd%d\n", fd);
 
 	clock_gettime(CLOCK_MONOTONIC, &startTime);
@@ -594,7 +599,7 @@ void mmap_test(struct timespec *diffTime) {
 void page_fault_test(struct timespec *diffTime) {
 	struct timespec startTime, endTime;
 
-	int fd =open("test_file.txt", O_RDONLY);
+	int fd =open(TEST_FILE, O_RDONLY);
 	if (fd < 0) printf("invalid fd%d\n", fd);
 
 	void *addr = (void *)syscall(SYS_mmap, NULL, file_size, PROT_READ, MAP_PRIVATE, fd, 0);
@@ -638,7 +643,7 @@ void ref_test(struct timespec *diffTime) {
 void munmap_test(struct timespec *diffTime) {
 	struct timespec startTime, endTime;
 
-	int fd =open("test_file.txt", O_RDWR);
+	int fd =open(TEST_FILE, O_RDWR);
 	if (fd < 0) printf("invalid fd%d\n", fd);
 	void *addr = (void *)syscall(SYS_mmap, NULL, file_size, PROT_WRITE, MAP_PRIVATE, fd, 0);
 	for (int i = 0; i < file_size; i++) {
@@ -1094,8 +1099,10 @@ void recv_test(struct timespec *timeArray, int iter, int *i) {
 
 int main(int argc, char *argv[])
 {
-	home = getenv("LEBENCH_DIR");
-	
+	/* home = getenv("LEBENCH_DIR"); */
+  // Hack for perf.
+  home = "/root/LEBench/TEST_DIR/results/";
+
 	output_fn = (char *)malloc(500*sizeof(char));
 	strcpy(output_fn, home);
 	strcat(output_fn, OUTPUT_FN);
@@ -1106,9 +1113,12 @@ int main(int argc, char *argv[])
 
 	struct timespec startTime, endTime;
 	clock_gettime(CLOCK_MONOTONIC, &startTime);
-	if (argc != 3){printf("Invalid arguments, gave %d not 3",argc);return(0);}
+	if (argc != 4){printf("Invalid arguments, gave %d not 4",argc);return(0);}
+
 	char *iteration = argv[1];
 	char *str_os_name = argv[2];
+  BASE_ITER = atoi(argv[3]);
+
 	FILE *fp;
 	FILE *copy = NULL;
 	fp=fopen(new_output_fn,"w");
@@ -1145,7 +1155,7 @@ int main(int argc, char *argv[])
 	/*               GETPID                  */
 	/*****************************************/
 
-	sleep(60);
+	/* sleep(60); */
 	info.iter = BASE_ITER * 100;
 	info.name = "ref";
 	one_line_test(fp, copy, ref_test, &info);
