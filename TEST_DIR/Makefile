@@ -1,6 +1,9 @@
 lebench: OS_Eval.c
 	gcc -o $@ OS_Eval.c -O0 -lpthread --static
 
+tubench: TU_PPID.c
+	gcc -o $@ TU_PPID.c -O0 --static -g
+
 run:
 	./lebench 0 TEST-OS-$i 32 > /dev/null
 exp_0_single_long_run:
