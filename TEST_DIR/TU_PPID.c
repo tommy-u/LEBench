@@ -26,7 +26,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
-#define NUM_SAMPLES 50
+#define NUM_SAMPLES 5000
 
 struct timespec *calc_diff(struct timespec *smaller, struct timespec *bigger)
 {
@@ -63,47 +63,58 @@ void add_diff_to_sum(struct timespec *result,struct timespec a, struct timespec 
     }
 }
 
-void getppid_test(struct timespec *diffTime) {
-	struct timespec startTime, endTime;
-	clock_gettime(CLOCK_MONOTONIC, &startTime);
-	syscall(SYS_getppid);
-	clock_gettime(CLOCK_MONOTONIC, &endTime);
-	add_diff_to_sum(diffTime, endTime, startTime);
+
+#define REP 1000
+int myarr[REP];
+
+/* void getppid_test(struct timespec *diffTime) { */
+  void getppid_test() {
+	/* struct timespec startTime, endTime; */
+	/* clock_gettime(CLOCK_MONOTONIC, &startTime); */
+
+  int i;
+  for(i=0;i<REP;i++){
+    syscall(SYS_getppid);
+  }
+
+	/* clock_gettime(CLOCK_MONOTONIC, &endTime); */
+	/* add_diff_to_sum(diffTime, endTime, startTime); */
 	return;
 }
 
 void run_test(){
-	struct timespec testStart, testEnd;
-	clock_gettime(CLOCK_MONOTONIC,&testStart);
+	/* struct timespec testStart, testEnd; */
+	/* clock_gettime(CLOCK_MONOTONIC,&testStart); */
 
-	printf("Performing get_ppid test \n");
+	/* printf("Performing get_ppid test \n"); */
 
-	printf("Total test iteration %d.\n", NUM_SAMPLES);
+	/* printf("Total test iteration %d.\n", NUM_SAMPLES); */
 
-	struct timespec* timeArray = (struct timespec *)
-    malloc(sizeof(struct timespec) * NUM_SAMPLES);
+	/* struct timespec* timeArray = (struct timespec *) */
+  /*   malloc(sizeof(struct timespec) * NUM_SAMPLES); */
 
   // Hit the path a few times to avoid first start delay.
 	/* syscall(SYS_getpid); */
 
 	for (int i=0; i < NUM_SAMPLES; i++) {
-		timeArray[i].tv_sec = 0;
-		timeArray[i].tv_nsec = 0;
-		getppid_test(&timeArray[i]);
+		/* timeArray[i].tv_sec = 0; */
+		/* timeArray[i].tv_nsec = 0; */
+		/* getppid_test(&timeArray[i]); */
+		getppid_test();
 	}
 
-	clock_gettime(CLOCK_MONOTONIC,&testEnd);
-	struct timespec *diffTime = calc_diff(&testStart, &testEnd);
-	printf("Test took: %ld.%09ld seconds\n",diffTime->tv_sec, diffTime->tv_nsec);
-	free(diffTime);
+	/* clock_gettime(CLOCK_MONOTONIC,&testEnd); */
+	/* struct timespec *diffTime = calc_diff(&testStart, &testEnd); */
+	/* printf("Test took: %ld.%09ld seconds\n",diffTime->tv_sec, diffTime->tv_nsec); */
+	/* free(diffTime); */
 
 
   // Dump out samples.
-	for (int i=0; i < NUM_SAMPLES; i++) {
-    printf("Sample %d: %ld.%09ld\n",i, timeArray[i].tv_sec, timeArray[i].tv_nsec);
-  }
+	/* for (int i=0; i < NUM_SAMPLES; i++) { */
+  /*   printf("Sample %d: %ld.%09ld\n",i, timeArray[i].tv_sec, timeArray[i].tv_nsec); */
+  /* } */
 
-	free(timeArray);
+	/* free(timeArray); */
 }
 
 int main(int argc, char *argv[])
@@ -111,6 +122,8 @@ int main(int argc, char *argv[])
   printf("Running ppid test\n");
 
 	run_test();
+  printf("Done ppid\n");
+
   return 0;
 
 }
